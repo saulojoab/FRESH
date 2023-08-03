@@ -7,9 +7,11 @@ import {
   FaSmile,
   FaExclamationTriangle,
 } from "react-icons/fa";
+import { invoke } from "@tauri-apps/api";
 
 interface FolderListProps {
   childPaths: FolderWithMetadata[];
+  deleteFolder: (path: string) => void;
 }
 
 export interface FolderWithMetadata {
@@ -18,7 +20,10 @@ export interface FolderWithMetadata {
   lastModified: number;
 }
 
-export default function FolderListContainer({ childPaths }: FolderListProps) {
+export default function FolderListContainer({
+  childPaths,
+  deleteFolder,
+}: FolderListProps) {
   function checkFreshLevel(days: number) {
     if (days < 7) {
       return (
@@ -57,7 +62,7 @@ export default function FolderListContainer({ childPaths }: FolderListProps) {
       {childPaths
         .sort((a, b) => b.lastModified - a.lastModified)
         .map((childPath) => (
-          <tr>
+          <tr onClick={() => deleteFolder(childPath.path)}>
             <NameSectionContainer>
               <FolderIconContainer
                 backgroundColor={calculateColorBetween(

@@ -95,19 +95,37 @@ function App() {
     return childPathsFromFolder;
   }
 
+  async function deleteFolder(path: string) {
+    //console.log("deleting", path);
+    await invoke("delete_folder", { folderPath: path });
+    setChildPaths(childPaths.filter((childPath) => childPath.path !== path));
+  }
+
   return (
     <Container>
       <TopBar>
         <SettingsButton color={theme.colors.white} size={20} />
       </TopBar>
 
+      {/*
       <Button onClick={openDialog}>
         <FaFolder />
         Select Folder
       </Button>
+      */}
 
-      <p>{path}</p>
-      {!loading && <FolderListContainer childPaths={childPaths} />}
+      <DefaultFolderPathContainer>
+        <DefaultFolderPathText>
+          All repositories in<PathText>{path}</PathText>
+        </DefaultFolderPathText>
+      </DefaultFolderPathContainer>
+
+      {!loading && (
+        <FolderListContainer
+          deleteFolder={deleteFolder}
+          childPaths={childPaths}
+        />
+      )}
     </Container>
   );
 }
@@ -164,6 +182,28 @@ const SettingsButton = styled(FaCog)`
   &:hover {
     transform: rotate(360deg);
   }
+`;
+
+const DefaultFolderPathText = styled.span`
+  color: ${({ theme }) => theme.colors.white};
+  font-size: 1.5rem;
+  font-family: ${({ theme }) => theme.fonts.lightItalic};
+`;
+
+const PathText = styled.span`
+  color: ${({ theme }) => theme.colors.white};
+  font-size: 1.5rem;
+  font-family: ${({ theme }) => theme.fonts.boldItalic};
+  margin-left: 10px;
+`;
+
+const DefaultFolderPathContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  margin-top: -10px;
 `;
 
 export default App;
