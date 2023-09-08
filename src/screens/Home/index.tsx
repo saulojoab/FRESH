@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { open } from "@tauri-apps/api/dialog";
-import { FileEntry, readDir } from "@tauri-apps/api/fs";
+import { readDir } from "@tauri-apps/api/fs";
 import { invoke } from "@tauri-apps/api";
 import styled, { useTheme } from "styled-components";
 import { FaCog, FaFolder } from "react-icons/fa";
@@ -8,26 +8,11 @@ import { FaCog, FaFolder } from "react-icons/fa";
 import FolderListContainer, {
   FolderWithMetadata,
 } from "@/containers/FolderList";
+import checkAllGitRepositoriesFolders from "@/global/utils/checkAllGitRepositoriesFolders";
 
 function App() {
   const [path, setPath] = useState("");
-  const [childPaths, setChildPaths] = useState<FolderWithMetadata[]>([
-    {
-      name: "test",
-      path: "test",
-      lastModified: 0,
-    },
-    {
-      name: "test",
-      path: "test2",
-      lastModified: 15,
-    },
-    {
-      name: "test",
-      path: "test3",
-      lastModified: 30,
-    },
-  ]);
+  const [childPaths, setChildPaths] = useState<FolderWithMetadata[]>([]);
   const [loading, setLoading] = useState(false);
 
   const theme = useTheme();
@@ -46,53 +31,9 @@ function App() {
     setLoading(true);
     const entries = await readDir(selected, { recursive: true });
 
-    const allRepositories = await checkGitRepositories(entries);
+    const allRepositories = await checkAllGitRepositoriesFolders(entries);
     setChildPaths(allRepositories);
     setLoading(false);
-  }
-
-  async function getDaysSinceLastModified(entry: FileEntry) {
-    const lastModified = (await invoke("modified_time", {
-      filePath: entry.path,
-    })) as { nanos_since_epoch: number; secs_since_epoch: number };
-
-    const lastModifiedDate = new Date(0);
-
-    lastModifiedDate.setUTCSeconds(lastModified.secs_since_epoch);
-
-    return Math.floor(
-      (Date.now() - lastModifiedDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-  }
-
-  async function checkGitRepositories(entries: FileEntry[]) {
-    const childPathsFromFolder: FolderWithMetadata[] = [];
-
-    async function traverse(node: FileEntry) {
-      if (node.children) {
-        for (const child of node.children) {
-          if (child.name?.endsWith(".git")) {
-            const pathWithoutGit = child.path.replace(".git", "");
-            childPathsFromFolder.push({
-              name: child.path.split("\\")[child.path.split("\\").length - 2],
-              path: pathWithoutGit,
-              lastModified: await getDaysSinceLastModified({
-                ...child,
-                path: pathWithoutGit,
-              }),
-            });
-          }
-
-          await traverse(child);
-        }
-      }
-    }
-
-    for (const entry of entries) {
-      await traverse(entry);
-    }
-
-    return childPathsFromFolder;
   }
 
   async function deleteFolder(path: string) {
@@ -101,26 +42,32 @@ function App() {
     setChildPaths(childPaths.filter((childPath) => childPath.path !== path));
   }
 
+  if (loading) {
+    return <Container>Loading...</Container>;
+  }
+
   return (
     <Container>
       <TopBar>
         <SettingsButton color={theme.colors.white} size={20} />
       </TopBar>
 
-      {/*
-      <Button onClick={openDialog}>
-        <FaFolder />
-        Select Folder
-      </Button>
-      */}
+      {!childPaths.length && (
+        <Button onClick={openDialog}>
+          <FaFolder />
+          Select Folder
+        </Button>
+      )}
 
-      <DefaultFolderPathContainer>
-        <DefaultFolderPathText>
-          All repositories in<PathText>{path}</PathText>
-        </DefaultFolderPathText>
-      </DefaultFolderPathContainer>
+      {!!childPaths.length && (
+        <DefaultFolderPathContainer>
+          <DefaultFolderPathText>
+            All repositories in<PathText>{path}</PathText>
+          </DefaultFolderPathText>
+        </DefaultFolderPathContainer>
+      )}
 
-      {!loading && (
+      {!loading && !!childPaths.length && (
         <FolderListContainer
           deleteFolder={deleteFolder}
           childPaths={childPaths}

@@ -7,7 +7,6 @@ import {
   FaSmile,
   FaExclamationTriangle,
 } from "react-icons/fa";
-import { invoke } from "@tauri-apps/api";
 
 interface FolderListProps {
   childPaths: FolderWithMetadata[];
@@ -18,6 +17,7 @@ export interface FolderWithMetadata {
   name?: string;
   path: string;
   lastModified: number;
+  size: string;
 }
 
 export default function FolderListContainer({
@@ -57,7 +57,8 @@ export default function FolderListContainer({
         <th>Folder</th>
         <th>Path</th>
         <th>Status</th>
-        <th>Last Accessed</th>
+        <th>Size</th>
+        <th>Last Modified</th>
       </tr>
       {childPaths
         .sort((a, b) => b.lastModified - a.lastModified)
@@ -77,6 +78,7 @@ export default function FolderListContainer({
             <SectionContainer>
               <FolderPath>{childPath.path}</FolderPath>
             </SectionContainer>
+
             <SectionContainer>
               <StatusBadge
                 backgroundColor={calculateColorBetween(
@@ -86,10 +88,13 @@ export default function FolderListContainer({
                 {checkFreshLevel(childPath.lastModified)}
               </StatusBadge>
             </SectionContainer>
+
             <SectionContainer>
-              <LastAccessed>
-                <b>Last modified:</b> {childPath.lastModified} days ago
-              </LastAccessed>
+              <FolderPath>{childPath.size} MB</FolderPath>
+            </SectionContainer>
+
+            <SectionContainer>
+              <LastAccessed>{childPath.lastModified} days ago</LastAccessed>
             </SectionContainer>
           </tr>
         ))}
@@ -165,10 +170,6 @@ const StatusBadge = styled.div<{ backgroundColor: string }>`
   gap: 5px;
 `;
 
-interface FolderProps {
-  linearColor: string;
-}
-
 const FolderName = styled.span`
   font-size: 16px;
   font-family: ${({ theme }) => theme.fonts.blackItalic};
@@ -181,4 +182,5 @@ const FolderPath = styled.span`
   font-size: 12px;
   margin: 10px;
   flex: 1;
+  text-align: center;
 `;
